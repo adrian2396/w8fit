@@ -45,6 +45,10 @@ float w2 = 0;
 float w3 = 0;
 float w4 = 0; 
 
+int selectWeight = false;
+int calibrateWeight = false;
+float knownWeight = 0.05;
+
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
 byte DOUT[CELL_NUMBER + 1] = {0, 34, 12, 4, 33};
@@ -52,9 +56,12 @@ byte CLK[CELL_NUMBER + 1] = {0,32, 13, 0, 25};
 
 // variables
 int state = ACTIVE;
+int previousState = ACTIVE;
 int next = false;
+int actualice = X;
 
-void setup() {
+void setup() 
+{
   Serial.begin(115200);
   Serial.println("\n");
 
@@ -65,19 +72,14 @@ void setup() {
 
   pthread_mutex_init(&mutex, 0);
 
-
   Wire.begin(SDA, SCL, 100000);
-
+  Serial.println("[tasks.cpp]: OLED init ");
   oled_.vOledBegin();
-
   oled_.vDrawBalance();
-  delay(2000); // Pause for 2 seconds
-
-  // Clear the buffer
-  display.clearDisplay();
-
-  // Draw a single pixel in white
-  display.drawPixel(10, 10, WHITE);
+  oled_.vDrawWeigth(w1, 0, 0);
+  oled_.vDrawWeigth(w2, 0, 1);
+  oled_.vDrawWeigth(w3, 1, 0);
+  oled_.vDrawWeigth(w4, 1, 1);
 
   //eeprom_write(EEPROM_SSID_STA_KEY, "");
   //eeprom_write(EEPROM_PASWD_STA_KEY, "");
@@ -93,16 +95,6 @@ void setup() {
   CLK[1] = 13;
   CLK[2] = 4;
   CLK[3] = 25;
-
-  /*pinMode(DOUT[0], INPUT);
-  pinMode(DOUT[1], INPUT);
-  pinMode(DOUT[2], INPUT);
-  pinMode(DOUT[3], INPUT);
-
-  pinMode(CLK[0], INPUT);
-  pinMode(CLK[1], INPUT);
-  pinMode(CLK[2], INPUT);
-  pinMode(CLK[3], INPUT);*/
 
   pinMode(CALIBRATE, INPUT);
   pinMode(SELECT, INPUT);
@@ -121,79 +113,43 @@ void setup() {
   /*TaskHandle_t xHandleUI = NULL;
   Serial.println("[main.cpp]: UI task created");
   xTaskCreatePinnedToCore(vTaskUI, "UI Task", TASK_STACK_SIZE, (void*)&wifiMode, TASK_PRIORITY + 3, &xHandleUI, 1);
-  configASSERT(xHandleUI);
-
-  TaskHandle_t xHandleOled = NULL;
-  Serial.println("[main.cpp]: OLED task created");
-  xTaskCreatePinnedToCore(vTaskOled, "OLED Task", TASK_STACK_SIZE, (void*)&oled_, TASK_PRIORITY + 1, &xHandleOled, 0);
-  configASSERT(xHandleOled);*/
+  configASSERT(xHandleUI);*/
 
   TaskHandle_t xHandleHX711_A;
   Serial.println("[main.cpp]: HX711_A Task created");
-  xTaskCreatePinnedToCore(vTaskHX711_A, "HX711_A Task", TASK_STACK_SIZE, (void*)&hx711_A, TASK_PRIORITY + 1, &xHandleHX711_A, 1);
+  xTaskCreatePinnedToCore(vTaskHX711_A, "HX711_A Task", TASK_STACK_SIZE, (void*)&hx711_A, TASK_PRIORITY + 1, &xHandleHX711_A, 0);
   configASSERT(xHandleHX711_A);
 
   TaskHandle_t xHandleHX711_B;
   Serial.println("[main.cpp]: HX711_B Task created");
-  xTaskCreatePinnedToCore(vTaskHX711_B, "HX711_B Task", TASK_STACK_SIZE, (void*)&hx711_B, TASK_PRIORITY + 1, &xHandleHX711_B, 1);
+  xTaskCreatePinnedToCore(vTaskHX711_B, "HX711_B Task", TASK_STACK_SIZE, (void*)&hx711_B, TASK_PRIORITY + 1, &xHandleHX711_B, 0);
   configASSERT(xHandleHX711_B);
 
   TaskHandle_t xHandleHX711_C;
   Serial.println("[main.cpp]: HX711_C Task created");
-  xTaskCreatePinnedToCore(vTaskHX711_C, "HX711_C Task", TASK_STACK_SIZE, (void*)&hx711_C, TASK_PRIORITY + 1, &xHandleHX711_C, 1);
+  xTaskCreatePinnedToCore(vTaskHX711_C, "HX711_C Task", TASK_STACK_SIZE, (void*)&hx711_C, TASK_PRIORITY + 1, &xHandleHX711_C, 0);
   configASSERT(xHandleHX711_C);
 
   TaskHandle_t xHandleHX711_D;
   Serial.println("[main.cpp]: HX711_D Task created");
-  xTaskCreatePinnedToCore(vTaskHX711_D, "HX711_D Task", TASK_STACK_SIZE, (void*)&hx711_D, TASK_PRIORITY + 1, &xHandleHX711_D, 1);
+  xTaskCreatePinnedToCore(vTaskHX711_D, "HX711_D Task", TASK_STACK_SIZE, (void*)&hx711_D, TASK_PRIORITY + 1, &xHandleHX711_D, 0);
   configASSERT(xHandleHX711_D);
 
   TaskHandle_t xHandleButtons;
   Serial.println("[main.cpp]: Button Task created");
-  xTaskCreatePinnedToCore(vTaskButtons, "Buttons Task", TASK_STACK_SIZE, (void*)&buttons_, TASK_PRIORITY + 1, &xHandleButtons, 0);
+  xTaskCreatePinnedToCore(vTaskButtons, "Buttons Task", TASK_STACK_SIZE, (void*)&buttons_, TASK_PRIORITY + 1, &xHandleButtons, 1);
   configASSERT(xHandleButtons);
 
   //vTaskSuspend(NULL);
 }
 
-void loop() {
-  /*byte error, address;
-  int nDevices;
+void loop() 
 
-  Serial.println("Scanning...");
-
-  nDevices = 0;
-  for(address = 1; address < 127; address++ )
-  {
-      Wire.beginTransmission(address);
-      error = Wire.endTransmission();
-
-      Wire.beginTransmission(address+1);
-
-  if (error == 0 && Wire.endTransmission() != 0 ) // Special flag for SAMD Series
-  {
-      Serial.print("I2C device found at address 0x");
-      if (address<16)
-          Serial.print("0");
-      Serial.print(address,HEX);
-      Serial.println("!");
-
-      nDevices++;
-  }
-  else if (error==4) 
-  {
-      Serial.print("Unknown error at address 0x");
-      if (address<16) 
-          Serial.print("0");
-      Serial.println(address,HEX);
-  }
-  }
-  if (nDevices == 0)
-      Serial.println("No I2C devices found\n");
-  else
-      Serial.println("done\n");
-
-  delay(5000);           // wait 5 seconds for next scan*/
-
-  return;
+{
+  //pthread_mutex_lock(&mutex);
+  oled_.vCheckOledState();
+  //buttons_.vPrintState();
+  delay(1);
+  //Serial.println("1223");
+  //pthread_mutex_unlock(&mutex);
 }

@@ -21,8 +21,7 @@
 #define CELL_NUMBER	4
 #define SELECT     14 
 #define CALIBRATE   27
-#define GREEN   19
-#define RED 18
+
 
 class HX711
 {

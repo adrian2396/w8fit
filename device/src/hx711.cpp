@@ -13,6 +13,9 @@
 extern int state;
 extern int next;
 
+
+extern int actualice;
+
 extern float w1;
 extern float w2;
 extern float w3;
@@ -260,20 +263,32 @@ void HX711::vPowerUp() {
 
 void HX711::vCalibration(byte dout, byte sck, int hx711_n){
 
+	calibration = 0;
+	next = true;
+
+	digitalWrite(RED, HIGH);
+	digitalWrite(GREEN, LOW);
+
+	Serial.printf("next:");
+	Serial.println(next);
+
 	vBegin(dout, sck);
 	Serial.print("[hx711]: Calibrating DEVICE Nº ");
 	Serial.println(hx711_n - 1);
 	Serial.print("[hx711]: AD read:  ");
-	Serial.println(vRead());
-	vSetScale(); //La escala por defecto es 1
-	vTare(20);  //El peso actual es considerado Tara.
+	//Serial.println(vRead());
+	//vSetScale(); //La escala por defecto es 1
+	//vTare(20);  //El peso actual es considerado Tara.
 	Serial.println("[hx711]: Put a known weight");
 
 	for (int i = 0; i < 3; i++) {
-		calibration = calibration +  vGetUnits(20);
+		calibration = calibration +  vGetUnits(10);
 	}
 
-	calibration = calibration/10;
+	calibration = calibration/3;
+
+	digitalWrite(RED, LOW);
+	digitalWrite(GREEN, HIGH);
 
 	while (!next){
 		Serial.println("[hx711.cpp]: waiting for press select button");
@@ -282,14 +297,16 @@ void HX711::vCalibration(byte dout, byte sck, int hx711_n){
 
 	vBegin(dout, sck);
 	Serial.print("[hx711]: AD2 read:   ");
-	Serial.println(calibration = vRead());
+	//Serial.println(calibration = vRead());
 	Serial.println("[hx711]: Put no weight on the scalea");
 	Serial.println("[hx711]: Destarando...");
-	vSetScale(SCALE = calibration/knownWeight); //La escala por defecto es 1
-	vTare(20);  //El peso actual es considerado Tara.
+	//vSetScale(SCALE = calibration/knownWeight); //La escala por defecto es 1
+	//vTare(20);  //El peso actual es considerado Tara.
 	Serial.println("[hx711]: Calibrated Cell");
 
-	next = false;
+	//next = false;
+
+	digitalWrite(GREEN, LOW);
 	
 }
 void HX711::vSetUp(byte dout, byte sck){
@@ -305,10 +322,12 @@ void HX711::vCheckStateA(byte dout, byte clk){
 	switch (state){
 	case ACTIVE:
 		w1 = 0;
-		w1 = vGetUnits(20);
+		w1 = vGetUnits(10);
+		if (w1 <= 0) w1 = w1 * -1;
 		Serial.print("[hx711]: Peso A: ");
-		Serial.print(vGetUnits(20),1);
+		Serial.print(w1, 3);
 		Serial.println(" g");
+		actualice = A;
 		break;
 	case CELL_A:
 		/* Calibrate A */
@@ -328,16 +347,18 @@ void HX711::vCheckStateA(byte dout, byte clk){
 	default:
 		break;
 	}
-	vTaskDelay(1000);
+	vTaskDelay(1);
 }
 void HX711::vCheckStateB(byte dout, byte clk){
 	switch (state){
 	case ACTIVE:
 		w2 = 0;
-		w2 = vGetUnits(20);
+		w2 = vGetUnits(10);
+		if (w2 <= 0) w2 = w2 * -1;
 		Serial.print("[hx711]: Peso B: ");
-		Serial.print(vGetUnits(20),1);
+		Serial.print(w2, 3);
 		Serial.println(" g");
+		actualice = B;
 		break;
 	case CELL_A:
 		vTaskDelay(1);
@@ -357,16 +378,19 @@ void HX711::vCheckStateB(byte dout, byte clk){
 	default:
 		break;
 	}
-	vTaskDelay(1000);
+	vTaskDelay(1);
 }
 void HX711::vCheckStateC(byte dout, byte clk){
+
 	switch (state){
 	case ACTIVE:
 		w3 = 0;
 		//w3 = vGetUnits(20);
+		if (w3 <= 0) w3 = w3 * -1;
 		Serial.print("[hx711]: Peso C: ");
-		//Serial.print(vGetUnits(20),1);
+		Serial.print(w3, 3);
 		Serial.println(" g");
+		actualice = C;
 		break;
 	case CELL_A:
 		vTaskDelay(1);
@@ -386,16 +410,18 @@ void HX711::vCheckStateC(byte dout, byte clk){
 	default:
 		break;
 	}
-	vTaskDelay(1000);
+	vTaskDelay(1);
 }
 void HX711::vCheckStateD(byte dout, byte clk){
 		switch (state){
 		case ACTIVE:
 			w4 = 0;
-			w4 = vGetUnits(20);
+			w4 = vGetUnits(10);
+			if (w4 <= 0) w4 = w4 * -1;
 			Serial.print("[hx711]: Peso D: ");
-			Serial.print(vGetUnits(20),1);
+			Serial.print(w3, 3);
 			Serial.println(" g");
+			actualice = D;
 			break;
 		case CELL_A:
 			vTaskDelay(1);
@@ -415,7 +441,7 @@ void HX711::vCheckStateD(byte dout, byte clk){
 		default:
 			break;
 		}
-		vTaskDelay(1000);
+		vTaskDelay(1);
 }
 
 

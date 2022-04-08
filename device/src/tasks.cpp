@@ -14,7 +14,9 @@ extern float w2;
 extern float w3;
 extern float w4;
 
-void vTaskUI(void * param){
+
+void vTaskUI(void * param)
+{
     wifiModule xWeb = *(wifiModule*)param;
 
     Serial.println("");
@@ -39,31 +41,8 @@ void vTaskUI(void * param){
     }
 }
 
-void vTaskOled(void * param){
-    oled xOled = *(oled*)param;
-
-    Serial.println("");
-    Serial.println("[tasks.cpp]: Oled Task running on core");
-    Serial.println(xPortGetCoreID());
-
-    Wire.begin(SDA, SCL,100000);
-
-    Serial.println("[tasks.cpp]: OLED init ");
-    xOled.vOledBegin();
-
-    Serial.println("[tasks.cpp]: display init ");
-    xOled.display->display();
-    delay(2000); // Pause for 2 seconds
-
-    while (1){
-        pthread_mutex_lock(&mutex);
-        vTaskDelay(100);
-        pthread_mutex_unlock(&mutex);
-    }
-    
-}
-
-void vTaskHX711_A(void * param){
+void vTaskHX711_A(void * param)
+{
     HX711 HX711_A = *(HX711*)param;
 
     Serial.println("");
@@ -76,7 +55,8 @@ void vTaskHX711_A(void * param){
         pthread_mutex_unlock(&mutex);
     }
 }
-void vTaskHX711_B(void * param){
+void vTaskHX711_B(void * param)
+{
     HX711 HX711_B = *(HX711*)param;
 
     Serial.println("");
@@ -89,7 +69,8 @@ void vTaskHX711_B(void * param){
         pthread_mutex_unlock(&mutex);
     }
 }
-void vTaskHX711_C(void * param){
+void vTaskHX711_C(void * param)
+{
     HX711 HX711_C = *(HX711*)param;
 
     Serial.println("");
@@ -102,7 +83,8 @@ void vTaskHX711_C(void * param){
         pthread_mutex_unlock(&mutex);
     }
 }
-void vTaskHX711_D(void * param){
+void vTaskHX711_D(void * param)
+{
     HX711 HX711_D = *(HX711*)param;
 
     Serial.println("");
@@ -116,7 +98,8 @@ void vTaskHX711_D(void * param){
     }
 }
 
-void vTaskButtons(void * param){
+void vTaskButtons(void * param)
+{
     buttons buttons_ = *(buttons*)param;
 
     vTaskDelay(1000);

@@ -5,10 +5,6 @@
 
 #include "parameters.h"
 
-#define SELECT     14 
-#define CALIBRATE   27
-#define GREEN   19
-#define RED 18
 
 class buttons{
 private:
@@ -23,6 +19,8 @@ public:
 
     void vCheckStateSelect();
     void vCheckStateCalibrate();
+
+    void vPrintState();
 };
 
 

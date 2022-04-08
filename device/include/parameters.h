@@ -20,7 +20,15 @@
 #define SOFT_AP_MODE 1
 #define STATION_MODE 2
 
-enum calibration {ACTIVE = 0, CELL_A, CELL_B, CELL_C, CELL_D};
+
+#define SELECT     14 
+#define CALIBRATE   27
+#define GREEN   18
+#define RED 19
+
+
+enum calibration {ACTIVE = 0, CELL_A, CELL_B, CELL_C, CELL_D, CAL, SEND_DATA,BALANCE, SELECT_WEIGHT};
+enum actualice{X = 0, A, B, C, D};
 
 
 
